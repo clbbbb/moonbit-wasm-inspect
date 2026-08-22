@@ -119,3 +119,24 @@ test "semantic validator identifies an out-of-range export" {
   assert_true(report.has_errors())
   assert_true(report.render().contains("export-index"))
 }
+
+test "instruction scanner counts constants locals and calls" {
+  let bytes = [0x41, 0x2a, 0x21, 0x00, 0x10, 0x01, 0x0b]
+  match scan_instructions(bytes, { start: 0, end: bytes.length() }) {
+    Err(error) => fail(error.message())
+    Ok(stats) => {
+      assert_eq(stats.instruction_count, 4)
+      assert_eq(stats.constant_count, 1)
+      assert_eq(stats.local_access_count, 1)
+      assert_eq(stats.call_count, 1)
+    }
+  }
+}
+
+test "instruction scanner rejects unterminated control flow" {
+  let bytes = [0x02, 0x40, 0x01]
+  match scan_instructions(bytes, { start: 0, end: bytes.length() }) {
+    Ok(_) => fail("expected missing end")
+    Err(error) => assert_true(error.message().contains("final end"))
+  }
+}
