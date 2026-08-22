@@ -98,3 +98,24 @@ test "reports function-code count mismatch without losing metadata" {
     Ok(decoded) => assert_eq(decoded.warnings().length(), 1)
   }
 }
+
+test "semantic validator accepts a coherent exported function" {
+  let bytes = empty_module()
+  bytes.push(1); bytes.push(4); bytes.push(1); bytes.push(0x60); bytes.push(0); bytes.push(0)
+  bytes.push(3); bytes.push(2); bytes.push(1); bytes.push(0)
+  bytes.push(7); bytes.push(5); bytes.push(1); bytes.push(1); bytes.push(0x66); bytes.push(0); bytes.push(0)
+  bytes.push(10); bytes.push(4); bytes.push(1); bytes.push(2); bytes.push(0); bytes.push(0x0b)
+  let binary = match parse_module(bytes) { Ok(value) => value; Err(error) => fail(error.message()) }
+  let decoded = match decode_module(binary) { Ok(value) => value; Err(error) => fail(error.message()) }
+  assert_false(validate(decoded).has_errors())
+}
+
+test "semantic validator identifies an out-of-range export" {
+  let bytes = empty_module()
+  bytes.push(7); bytes.push(5); bytes.push(1); bytes.push(1); bytes.push(0x66); bytes.push(0); bytes.push(1)
+  let binary = match parse_module(bytes) { Ok(value) => value; Err(error) => fail(error.message()) }
+  let decoded = match decode_module(binary) { Ok(value) => value; Err(error) => fail(error.message()) }
+  let report = validate(decoded)
+  assert_true(report.has_errors())
+  assert_true(report.render().contains("export-index"))
+}
