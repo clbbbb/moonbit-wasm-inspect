@@ -1,0 +1,5 @@
+// import {
+//   "clbbbb/moonbit-wasm-inspect" @lib,
+// }
+
+pkgtype(kind: "executable")
