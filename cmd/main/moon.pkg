@@ -1,5 +1,7 @@
-// import {
-//   "clbbbb/moonbit-wasm-inspect" @lib,
-// }
+import {
+  "clbbbb/moonbit-wasm-inspect" @inspect,
+  "moonbitlang/core/env",
+  "moonbitlang/x/fs",
+}
 
 pkgtype(kind: "executable")

@@ -15,12 +15,16 @@ version = "0.1.0"
 
 readme = "README.mbt.md"
 
-repository = ""
+repository = "https://github.com/clbbbb/moonbit-wasm-inspect"
 
 license = "Apache-2.0"
 
-keywords = []
+keywords = [ "wasm", "webassembly", "binary", "inspection", "analysis" ]
 
 preferred_target = "wasm"
 
-description = ""
+description = "A MoonBit-native WebAssembly binary inspection and analysis library."
+
+import {
+  "moonbitlang/x@0.5.1",
+}
