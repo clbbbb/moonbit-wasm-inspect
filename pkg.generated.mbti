@@ -1,0 +1,337 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "clbbbb/moonbit-wasm-inspect"
+
+// Values
+pub fn build_call_graph(DecodedModule) -> Result[Array[FunctionCallSummary], DecodeError]
+
+pub fn data_segment_bytes(Module, DataSegment) -> Array[Int]
+
+pub fn decode_data_segments(Module) -> Result[Array[DataSegment], DecodeError]
+
+pub fn decode_element_segments(Module) -> Result[Array[ElementSegment], DecodeError]
+
+pub fn decode_module(Module) -> Result[DecodedModule, DecodeError]
+
+pub fn decode_name_section(Module) -> Result[NameSection?, DecodeError]
+
+pub fn detect_features(DecodedModule) -> Array[WasmFeature]
+
+pub fn diff_structure(Module, Module) -> Array[SectionDifference]
+
+pub fn parse_module(Array[Int]) -> Result[Module, DecodeError]
+
+pub fn render_data_segments(Array[DataSegment]) -> String
+
+pub fn render_decoded(DecodedModule) -> String
+
+pub fn render_element_segments(Array[ElementSegment]) -> String
+
+pub fn render_features(Array[WasmFeature]) -> String
+
+pub fn render_structure(Module) -> String
+
+pub fn render_structure_diff(Module, Module) -> String
+
+pub fn render_structure_json(Module) -> String
+
+pub fn render_validation_json(ValidationReport) -> String
+
+pub fn scan_code_body(Module, CodeBody) -> Result[InstructionStats, DecodeError]
+
+pub fn scan_instructions(Array[Int], Span) -> Result[InstructionStats, DecodeError]
+
+pub fn section_kind_from_id(Int) -> SectionKind?
+
+pub fn validate(DecodedModule) -> ValidationReport
+
+// Errors
+
+// Types and methods
+pub struct CodeBody {
+  locals : Array[ValueType]
+  instruction_span : Span
+  byte_length : Int
+}
+
+pub struct Cursor {
+  bytes : Array[Int]
+  mut position : Int
+  limit : Int
+}
+pub fn Cursor::is_finished(Self) -> Bool
+pub fn Cursor::new(Array[Int]) -> Self
+pub fn Cursor::peek_u8(Self) -> Result[Int, DecodeError]
+pub fn Cursor::read_name(Self) -> Result[String, DecodeError]
+pub fn Cursor::read_slice(Self, Int) -> Result[Array[Int], DecodeError]
+pub fn Cursor::read_u8(Self) -> Result[Int, DecodeError]
+pub fn Cursor::read_var_i32(Self) -> Result[Int, DecodeError]
+pub fn Cursor::read_var_u32(Self) -> Result[Int, DecodeError]
+pub fn Cursor::remaining(Self) -> Int
+pub fn Cursor::skip(Self, Int) -> Result[Unit, DecodeError]
+pub fn Cursor::span(Self) -> Span
+pub fn Cursor::subcursor(Self, Int) -> Result[Self, DecodeError]
+
+pub enum DataMode {
+  ActiveData(Int, Span)
+  PassiveData
+}
+
+pub struct DataSegment {
+  mode : DataMode
+  bytes : Span
+}
+pub fn DataSegment::byte_length(Self) -> Int
+pub fn DataSegment::description(Self) -> String
+
+pub enum DecodeError {
+  UnexpectedEof(Int)
+  InvalidLeb128(Int, String)
+  InvalidHeader(String)
+  InvalidSection(Int, Int, String)
+  UnsupportedFeature(String, Int)
+  InvalidUtf8(Int)
+  ValidationError(Int, String)
+}
+pub fn DecodeError::message(Self) -> String
+
+pub struct DecodedModule {
+  binary : Module
+  types : Array[FunctionType]
+  imports : Array[Import]
+  function_types : Array[Int]
+  tables : Array[TableInfo]
+  memories : Array[MemoryInfo]
+  globals : Array[GlobalInfo]
+  exports : Array[Export]
+  start_function : Int?
+  code_bodies : Array[CodeBody]
+  element_segments : Array[ElementSegment]
+  data_segments : Array[DataSegment]
+  data_count : Int?
+  tags : Array[TagInfo]
+  warnings : Array[String]
+}
+pub fn DecodedModule::binary(Self) -> Module
+pub fn DecodedModule::defined_function_count(Self) -> Int
+pub fn DecodedModule::defined_tag_count(Self) -> Int
+pub fn DecodedModule::exports(Self) -> Array[Export]
+pub fn DecodedModule::imported_function_count(Self) -> Int
+pub fn DecodedModule::imports(Self) -> Array[Import]
+pub fn DecodedModule::types(Self) -> Array[FunctionType]
+pub fn DecodedModule::warnings(Self) -> Array[String]
+
+pub enum ElementMode {
+  ActiveElement(Int, Span)
+  PassiveElement
+  DeclarativeElement
+}
+
+pub struct ElementSegment {
+  mode : ElementMode
+  functions : Array[Int]
+}
+pub fn ElementSegment::description(Self) -> String
+
+pub struct Export {
+  name : String
+  kind : ExternalKind
+  index : Int
+}
+
+pub enum ExternalKind {
+  FunctionExternal
+  TableExternal
+  MemoryExternal
+  GlobalExternal
+  TagExternal
+} derive(Eq)
+pub fn ExternalKind::label(Self) -> String
+
+pub struct FunctionCallSummary {
+  function_index : Int
+  callees : Array[Int]
+}
+
+pub struct FunctionName {
+  index : Int
+  name : String
+}
+
+pub struct FunctionType {
+  params : Array[ValueType]
+  results : Array[ValueType]
+}
+pub fn FunctionType::params(Self) -> Array[ValueType]
+pub fn FunctionType::results(Self) -> Array[ValueType]
+pub fn FunctionType::signature(Self) -> String
+
+pub struct GlobalInfo {
+  value_type : ValueType
+  mutable : Bool
+  init_span : Span
+}
+
+pub struct Import {
+  module_name : String
+  name : String
+  kind : ExternalKind
+  type_index : Int?
+}
+
+pub struct InstructionStats {
+  instruction_count : Int
+  control_depth : Int
+  control_block_count : Int
+  branch_count : Int
+  call_count : Int
+  called_functions : Array[Int]
+  memory_access_count : Int
+  local_access_count : Int
+  constant_count : Int
+  bulk_memory_instruction_count : Int
+  simd_instruction_count : Int
+}
+pub fn InstructionStats::summary(Self) -> String
+
+pub enum IssueLevel {
+  ErrorIssue
+  WarningIssue
+} derive(Eq)
+pub fn IssueLevel::label(Self) -> String
+
+pub struct Limits {
+  minimum : Int
+  maximum : Int?
+  shared : Bool
+  memory64 : Bool
+}
+pub fn Limits::description(Self) -> String
+
+pub struct MemoryInfo {
+  limits : Limits
+}
+
+pub struct Module {
+  bytes : Array[Int]
+  sections : Array[Section]
+  version : Int
+}
+pub fn Module::byte_length(Self) -> Int
+pub fn Module::custom_sections(Self, String) -> Array[Section]
+pub fn Module::find_section(Self, SectionKind) -> Section?
+pub fn Module::has_section(Self, SectionKind) -> Bool
+pub fn Module::section_bytes(Self, Section) -> Array[Int]
+pub fn Module::section_count(Self) -> Int
+pub fn Module::section_labels(Self) -> Array[String]
+pub fn Module::sections(Self) -> Array[Section]
+pub fn Module::stats(Self) -> ModuleStats
+pub fn Module::version(Self) -> Int
+
+pub struct ModuleStats {
+  byte_length : Int
+  section_count : Int
+  custom_section_count : Int
+  payload_bytes : Int
+}
+pub fn ModuleStats::description(Self) -> String
+
+pub struct NameSection {
+  module_name : String?
+  function_names : Array[FunctionName]
+  unknown_subsection_ids : Array[Int]
+}
+pub fn NameSection::function_name(Self, Int) -> String?
+pub fn NameSection::render(Self) -> String
+
+pub struct Section {
+  id : Int
+  kind : SectionKind
+  payload : Span
+  full : Span
+  custom_name : String?
+}
+pub fn Section::is_named(Self, String) -> Bool
+pub fn Section::payload_size(Self) -> Int
+
+pub struct SectionDifference {
+  label : String
+  left_size : Int?
+  right_size : Int?
+}
+pub fn SectionDifference::description(Self) -> String
+
+pub enum SectionKind {
+  Custom
+  Type
+  Import
+  Function
+  Table
+  Memory
+  Global
+  Export
+  Start
+  Element
+  Code
+  Data
+  DataCount
+  Tag
+} derive(Eq)
+pub fn SectionKind::id(Self) -> Int
+pub fn SectionKind::label(Self) -> String
+
+pub struct Span {
+  start : Int
+  end : Int
+}
+pub fn Span::contains(Self, Int) -> Bool
+pub fn Span::size(Self) -> Int
+
+pub struct TableInfo {
+  element_type : ValueType
+  limits : Limits
+}
+
+pub struct TagInfo {
+  type_index : Int
+}
+
+pub struct ValidationIssue {
+  level : IssueLevel
+  rule : String
+  message : String
+}
+pub fn ValidationIssue::description(Self) -> String
+
+pub struct ValidationReport {
+  issues : Array[ValidationIssue]
+}
+pub fn ValidationReport::has_errors(Self) -> Bool
+pub fn ValidationReport::issues(Self) -> Array[ValidationIssue]
+pub fn ValidationReport::render(Self) -> String
+
+pub enum ValueType {
+  I32
+  I64
+  F32
+  F64
+  V128
+  FuncRef
+  ExternRef
+}
+pub fn ValueType::label(Self) -> String
+
+pub enum WasmFeature {
+  MultiMemory
+  Memory64
+  Threads
+  BulkMemory
+  ReferenceTypes
+  ExceptionHandling
+  Simd
+}
+pub fn WasmFeature::label(Self) -> String
+
+// Type aliases
+
+// Traits
+

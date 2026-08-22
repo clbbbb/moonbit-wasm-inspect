@@ -1,7 +1,9 @@
 ///| WebAssembly module model. The model deliberately keeps raw section spans:
-///| callers can inspect a module cheaply and opt in to detailed decoding only
-///| for the sections they need.
 
+///| callers can inspect a module cheaply and opt in to detailed decoding only
+
+///|
+/// for the sections they need.
 pub enum SectionKind {
   Custom
   Type
@@ -19,6 +21,7 @@ pub enum SectionKind {
   Tag
 } derive(Eq)
 
+///|
 pub fn SectionKind::id(self : SectionKind) -> Int {
   match self {
     Custom => 0
@@ -38,6 +41,7 @@ pub fn SectionKind::id(self : SectionKind) -> Int {
   }
 }
 
+///|
 pub fn SectionKind::label(self : SectionKind) -> String {
   match self {
     Custom => "custom"
@@ -57,6 +61,7 @@ pub fn SectionKind::label(self : SectionKind) -> String {
   }
 }
 
+///|
 pub fn section_kind_from_id(id : Int) -> SectionKind? {
   match id {
     0 => Some(Custom)
@@ -77,6 +82,7 @@ pub fn section_kind_from_id(id : Int) -> SectionKind? {
   }
 }
 
+///|
 pub struct Section {
   id : Int
   kind : SectionKind
@@ -85,8 +91,12 @@ pub struct Section {
   custom_name : String?
 }
 
-pub fn Section::payload_size(self : Section) -> Int { self.payload.size() }
+///|
+pub fn Section::payload_size(self : Section) -> Int {
+  self.payload.size()
+}
 
+///|
 pub fn Section::is_named(self : Section, name : String) -> Bool {
   match self.custom_name {
     Some(value) => value == name
@@ -94,20 +104,34 @@ pub fn Section::is_named(self : Section, name : String) -> Bool {
   }
 }
 
+///|
 pub struct Module {
   bytes : Array[Int]
   sections : Array[Section]
   version : Int
 }
 
-pub fn Module::version(self : Module) -> Int { self.version }
+///|
+pub fn Module::version(self : Module) -> Int {
+  self.version
+}
 
-pub fn Module::byte_length(self : Module) -> Int { self.bytes.length() }
+///|
+pub fn Module::byte_length(self : Module) -> Int {
+  self.bytes.length()
+}
 
-pub fn Module::sections(self : Module) -> Array[Section] { self.sections }
+///|
+pub fn Module::sections(self : Module) -> Array[Section] {
+  self.sections
+}
 
-pub fn Module::section_count(self : Module) -> Int { self.sections.length() }
+///|
+pub fn Module::section_count(self : Module) -> Int {
+  self.sections.length()
+}
 
+///|
 pub fn Module::find_section(self : Module, kind : SectionKind) -> Section? {
   for section in self.sections {
     if section.kind == kind {
@@ -117,6 +141,7 @@ pub fn Module::find_section(self : Module, kind : SectionKind) -> Section? {
   None
 }
 
+///|
 pub fn Module::custom_sections(self : Module, name : String) -> Array[Section] {
   let found : Array[Section] = []
   for section in self.sections {
@@ -127,6 +152,7 @@ pub fn Module::custom_sections(self : Module, name : String) -> Array[Section] {
   found
 }
 
+///|
 pub fn Module::section_bytes(self : Module, section : Section) -> Array[Int] {
   let output : Array[Int] = []
   let mut position = section.payload.start
@@ -137,6 +163,7 @@ pub fn Module::section_bytes(self : Module, section : Section) -> Array[Int] {
   output
 }
 
+///|
 pub enum ValueType {
   I32
   I64
@@ -147,6 +174,7 @@ pub enum ValueType {
   ExternRef
 }
 
+///|
 pub fn ValueType::label(self : ValueType) -> String {
   match self {
     I32 => "i32"
@@ -159,6 +187,7 @@ pub fn ValueType::label(self : ValueType) -> String {
   }
 }
 
+///|
 fn value_type_from_byte(byte : Int) -> ValueType? {
   match byte {
     0x7f => Some(I32)
@@ -172,33 +201,46 @@ fn value_type_from_byte(byte : Int) -> ValueType? {
   }
 }
 
+///|
 pub struct FunctionType {
   params : Array[ValueType]
   results : Array[ValueType]
 }
 
-pub fn FunctionType::params(self : FunctionType) -> Array[ValueType] { self.params }
+///|
+pub fn FunctionType::params(self : FunctionType) -> Array[ValueType] {
+  self.params
+}
 
-pub fn FunctionType::results(self : FunctionType) -> Array[ValueType] { self.results }
+///|
+pub fn FunctionType::results(self : FunctionType) -> Array[ValueType] {
+  self.results
+}
 
+///|
 pub fn FunctionType::signature(self : FunctionType) -> String {
   let mut text = "("
   let mut first = true
   for value in self.params {
-    if !first { text = text + ", " }
+    if !first {
+      text = text + ", "
+    }
     text = text + value.label()
     first = false
   }
   text = text + ") -> ("
   first = true
   for value in self.results {
-    if !first { text = text + ", " }
+    if !first {
+      text = text + ", "
+    }
     text = text + value.label()
     first = false
   }
   text + ")"
 }
 
+///|
 pub enum ExternalKind {
   FunctionExternal
   TableExternal
@@ -207,6 +249,7 @@ pub enum ExternalKind {
   TagExternal
 } derive(Eq)
 
+///|
 pub fn ExternalKind::label(self : ExternalKind) -> String {
   match self {
     FunctionExternal => "function"
@@ -217,6 +260,7 @@ pub fn ExternalKind::label(self : ExternalKind) -> String {
   }
 }
 
+///|
 pub struct Import {
   module_name : String
   name : String
@@ -224,12 +268,14 @@ pub struct Import {
   type_index : Int?
 }
 
+///|
 pub struct Export {
   name : String
   kind : ExternalKind
   index : Int
 }
 
+///|
 pub struct Limits {
   minimum : Int
   maximum : Int?
@@ -237,6 +283,7 @@ pub struct Limits {
   memory64 : Bool
 }
 
+///|
 pub fn Limits::description(self : Limits) -> String {
   let text = "min=" + self.minimum.to_string()
   match self.maximum {
@@ -245,27 +292,37 @@ pub fn Limits::description(self : Limits) -> String {
   }
 }
 
+///|
 pub struct TableInfo {
   element_type : ValueType
   limits : Limits
 }
 
+///|
 pub struct MemoryInfo {
   limits : Limits
 }
 
+///|
 pub struct GlobalInfo {
   value_type : ValueType
   mutable : Bool
   init_span : Span
 }
 
+///|
+pub struct TagInfo {
+  type_index : Int
+}
+
+///|
 pub struct CodeBody {
   locals : Array[ValueType]
   instruction_span : Span
   byte_length : Int
 }
 
+///|
 pub struct DecodedModule {
   binary : Module
   types : Array[FunctionType]
@@ -277,27 +334,55 @@ pub struct DecodedModule {
   exports : Array[Export]
   start_function : Int?
   code_bodies : Array[CodeBody]
+  element_segments : Array[ElementSegment]
+  data_segments : Array[DataSegment]
+  data_count : Int?
+  tags : Array[TagInfo]
   warnings : Array[String]
 }
 
-pub fn DecodedModule::binary(self : DecodedModule) -> Module { self.binary }
+///|
+pub fn DecodedModule::binary(self : DecodedModule) -> Module {
+  self.binary
+}
 
-pub fn DecodedModule::types(self : DecodedModule) -> Array[FunctionType] { self.types }
+///|
+pub fn DecodedModule::types(self : DecodedModule) -> Array[FunctionType] {
+  self.types
+}
 
-pub fn DecodedModule::imports(self : DecodedModule) -> Array[Import] { self.imports }
+///|
+pub fn DecodedModule::imports(self : DecodedModule) -> Array[Import] {
+  self.imports
+}
 
-pub fn DecodedModule::exports(self : DecodedModule) -> Array[Export] { self.exports }
+///|
+pub fn DecodedModule::exports(self : DecodedModule) -> Array[Export] {
+  self.exports
+}
 
-pub fn DecodedModule::warnings(self : DecodedModule) -> Array[String] { self.warnings }
+///|
+pub fn DecodedModule::warnings(self : DecodedModule) -> Array[String] {
+  self.warnings
+}
 
+///|
 pub fn DecodedModule::defined_function_count(self : DecodedModule) -> Int {
   self.function_types.length()
 }
 
+///|
+pub fn DecodedModule::defined_tag_count(self : DecodedModule) -> Int {
+  self.tags.length()
+}
+
+///|
 pub fn DecodedModule::imported_function_count(self : DecodedModule) -> Int {
   let mut count = 0
   for item in self.imports {
-    if item.kind == FunctionExternal { count = count + 1 }
+    if item.kind == FunctionExternal {
+      count = count + 1
+    }
   }
   count
 }

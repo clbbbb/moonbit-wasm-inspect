@@ -1,7 +1,9 @@
 ///| Bounds-checked binary cursor. WebAssembly bytes are modelled as integers
-///| in the inclusive range 0..255 so callers can construct examples without
-///| relying on a filesystem or a host-specific byte type.
 
+///| in the inclusive range 0..255 so callers can construct examples without
+
+///|
+/// relying on a filesystem or a host-specific byte type.
 pub fn Cursor::read_u8(self : Cursor) -> Result[Int, DecodeError] {
   if self.position >= self.limit {
     Err(UnexpectedEof(self.position))
@@ -12,6 +14,7 @@ pub fn Cursor::read_u8(self : Cursor) -> Result[Int, DecodeError] {
   }
 }
 
+///|
 pub fn Cursor::peek_u8(self : Cursor) -> Result[Int, DecodeError] {
   if self.position >= self.limit {
     Err(UnexpectedEof(self.position))
@@ -20,6 +23,7 @@ pub fn Cursor::peek_u8(self : Cursor) -> Result[Int, DecodeError] {
   }
 }
 
+///|
 pub fn Cursor::skip(self : Cursor, count : Int) -> Result[Unit, DecodeError] {
   if count < 0 || count > self.remaining() {
     Err(UnexpectedEof(self.position))
@@ -29,7 +33,11 @@ pub fn Cursor::skip(self : Cursor, count : Int) -> Result[Unit, DecodeError] {
   }
 }
 
-pub fn Cursor::read_slice(self : Cursor, count : Int) -> Result[Array[Int], DecodeError] {
+///|
+pub fn Cursor::read_slice(
+  self : Cursor,
+  count : Int,
+) -> Result[Array[Int], DecodeError] {
   if count < 0 || count > self.remaining() {
     Err(UnexpectedEof(self.position))
   } else {
@@ -43,7 +51,11 @@ pub fn Cursor::read_slice(self : Cursor, count : Int) -> Result[Array[Int], Deco
   }
 }
 
-pub fn Cursor::subcursor(self : Cursor, count : Int) -> Result[Cursor, DecodeError] {
+///|
+pub fn Cursor::subcursor(
+  self : Cursor,
+  count : Int,
+) -> Result[Cursor, DecodeError] {
   if count < 0 || count > self.remaining() {
     Err(UnexpectedEof(self.position))
   } else {
@@ -53,6 +65,7 @@ pub fn Cursor::subcursor(self : Cursor, count : Int) -> Result[Cursor, DecodeErr
   }
 }
 
+///|
 pub fn Cursor::read_var_u32(self : Cursor) -> Result[Int, DecodeError] {
   let start = self.position
   let mut result = 0
@@ -81,6 +94,7 @@ pub fn Cursor::read_var_u32(self : Cursor) -> Result[Int, DecodeError] {
   Ok(result)
 }
 
+///|
 pub fn Cursor::read_var_i32(self : Cursor) -> Result[Int, DecodeError] {
   let start = self.position
   let mut result = 0
@@ -109,22 +123,24 @@ pub fn Cursor::read_var_i32(self : Cursor) -> Result[Int, DecodeError] {
   Ok(result)
 }
 
+///|
 pub fn Cursor::read_name(self : Cursor) -> Result[String, DecodeError] {
   let start = self.position
   match self.read_var_u32() {
     Err(error) => Err(error)
-    Ok(length) => match self.read_slice(length) {
-      Err(error) => Err(error)
-      Ok(bytes) => {
-        let mut text = ""
-        for byte in bytes {
-          if byte < 0x20 || byte > 0x7e {
-            return Err(InvalidUtf8(start))
+    Ok(length) =>
+      match self.read_slice(length) {
+        Err(error) => Err(error)
+        Ok(bytes) => {
+          let mut text = ""
+          for byte in bytes {
+            if byte < 0x20 || byte > 0x7e {
+              return Err(InvalidUtf8(start))
+            }
+            text = text + byte.unsafe_to_char().to_string()
           }
-          text = text + byte.unsafe_to_char().to_string()
+          Ok(text)
         }
-        Ok(text)
       }
-    }
   }
 }
