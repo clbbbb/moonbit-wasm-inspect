@@ -5,7 +5,7 @@
 ///|
 /// suitable for large modules and for tools that need to hash only one blob.
 pub enum DataMode {
-  ActiveData(Int, Span)
+  ActiveData(Int32, Span)
   PassiveData
 }
 
@@ -16,7 +16,7 @@ pub struct DataSegment {
 }
 
 ///|
-pub fn DataSegment::byte_length(self : DataSegment) -> Int {
+pub fn DataSegment::byte_length(self : DataSegment) -> Int32 {
   self.bytes.size()
 }
 
@@ -42,7 +42,7 @@ fn read_blob_span(cursor : Cursor) -> Result[Span, DecodeError] {
   }
   let start = cursor.position
   match cursor.skip(size) {
-    Ok(_) => Ok({ start, end: start + size })
+    Ok(_) => Ok({ start, end: start + size, })
     Err(_) =>
       Err(ValidationError(start, "data payload extends past section boundary"))
   }
@@ -99,7 +99,7 @@ pub fn decode_data_segments(
       Ok(value) => value
       Err(error) => return Err(error)
     }
-    segments.push({ mode, bytes })
+    segments.push({ mode, bytes, })
   }
   match expect_finished(cursor, Data) {
     Ok(_) => Ok(segments)
@@ -108,8 +108,11 @@ pub fn decode_data_segments(
 }
 
 ///|
-pub fn data_segment_bytes(binary : Module, segment : DataSegment) -> Array[Int] {
-  let output : Array[Int] = []
+pub fn data_segment_bytes(
+  binary : Module,
+  segment : DataSegment,
+) -> Array[Int32] {
+  let output : Array[Int32] = []
   for position in segment.bytes.start..<segment.bytes.end {
     output.push(binary.bytes[position])
   }

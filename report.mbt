@@ -187,8 +187,8 @@ pub fn render_decoded(decoded : DecodedModule) -> String {
 ///|
 pub struct SectionDifference {
   label : String
-  left_size : Int?
-  right_size : Int?
+  left_size : Int32?
+  right_size : Int32?
 }
 
 ///|
@@ -224,7 +224,7 @@ pub fn diff_structure(
       None => None
     }
     if left_size != right_size {
-      differences.push({ label: kind.label(), left_size, right_size })
+      differences.push({ label: kind.label(), left_size, right_size, })
     }
   }
   differences

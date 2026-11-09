@@ -3,17 +3,17 @@
 ///|
 /// returns compact call-graph and control-flow facts without executing code.
 pub struct InstructionStats {
-  instruction_count : Int
-  control_depth : Int
-  control_block_count : Int
-  branch_count : Int
-  call_count : Int
-  called_functions : Array[Int]
-  memory_access_count : Int
-  local_access_count : Int
-  constant_count : Int
-  bulk_memory_instruction_count : Int
-  simd_instruction_count : Int
+  instruction_count : Int32
+  control_depth : Int32
+  control_block_count : Int32
+  branch_count : Int32
+  call_count : Int32
+  called_functions : Array[Int32]
+  memory_access_count : Int32
+  local_access_count : Int32
+  constant_count : Int32
+  bulk_memory_instruction_count : Int32
+  simd_instruction_count : Int32
 }
 
 ///|
@@ -125,13 +125,13 @@ fn skip_bulk_memory_immediate(cursor : Cursor) -> Result[Bool, DecodeError] {
     Err(error) => return Err(error)
   }
   match subopcode {
-    0..=7 => Ok(false)
+    0..<=7 => Ok(false)
     8 | 10 | 12 | 14 =>
       match read_two_u32(cursor) {
         Ok(_) => Ok(true)
         Err(error) => Err(error)
       }
-    9 | 11 | 13 | 15..=17 =>
+    9 | 11 | 13 | 15..<=17 =>
       match cursor.read_var_u32() {
         Ok(_) => Ok(true)
         Err(error) => Err(error)
@@ -151,10 +151,10 @@ fn skip_simd_immediate(cursor : Cursor) -> Result[Unit, DecodeError] {
     Err(error) => return Err(error)
   }
   match subopcode {
-    0..=11 => skip_memory_immediate(cursor)
+    0..<=11 => skip_memory_immediate(cursor)
     12 | 13 => cursor.skip(16)
-    21..=34 => cursor.skip(1)
-    14..=20 | 35..=255 => Ok(())
+    21..<=34 => cursor.skip(1)
+    14..<=20 | 35..<=255 => Ok(())
     _ =>
       Err(
         UnsupportedFeature("0xfd subopcode " + subopcode.to_string(), position),
@@ -163,13 +163,13 @@ fn skip_simd_immediate(cursor : Cursor) -> Result[Unit, DecodeError] {
 }
 
 ///|
-fn is_plain_numeric(opcode : Int) -> Bool {
+fn is_plain_numeric(opcode : Int32) -> Bool {
   (opcode >= 0x45 && opcode <= 0xc4) || opcode == 0xd1
 }
 
 ///|
 pub fn scan_instructions(
-  bytes : Array[Int],
+  bytes : Array[Int32],
   span : Span,
 ) -> Result[InstructionStats, DecodeError] {
   let cursor = Cursor::with_bounds(bytes, span.start, span.end)
@@ -178,7 +178,7 @@ pub fn scan_instructions(
   let mut blocks = 0
   let mut branches = 0
   let mut calls = 0
-  let called_functions : Array[Int] = []
+  let called_functions : Array[Int32] = []
   let mut memory = 0
   let mut locals = 0
   let mut constants = 0
@@ -258,7 +258,7 @@ pub fn scan_instructions(
           Ok(_) => ()
           Err(error) => return Err(error)
         }
-      0x28..=0x3e => {
+      0x28..<=0x3e => {
         match skip_memory_immediate(cursor) {
           Ok(_) => ()
           Err(error) => return Err(error)
@@ -362,8 +362,8 @@ pub fn scan_code_body(
 
 ///|
 pub struct FunctionCallSummary {
-  function_index : Int
-  callees : Array[Int]
+  function_index : Int32
+  callees : Array[Int32]
 }
 
 ///|
@@ -377,7 +377,7 @@ pub fn build_call_graph(
       Ok(value) => value
       Err(error) => return Err(error)
     }
-    summaries.push({ function_index, callees: stats.called_functions })
+    summaries.push({ function_index, callees: stats.called_functions, })
     function_index = function_index + 1
   }
   Ok(summaries)

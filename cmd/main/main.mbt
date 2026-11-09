@@ -3,19 +3,19 @@
 ///|
 /// reporting; this package only handles paths, arguments, and exit codes.
 #cfg(target="wasm")
-fn exit_with(code : Int) -> Unit = "wasi_snapshot_preview1" "proc_exit"
+fn exit_with(code : Int32) -> Unit = "wasi_snapshot_preview1" "proc_exit"
 
 ///|
 #cfg(target="wasm-gc")
-fn exit_with(code : Int) -> Unit = "__moonbit_sys_unstable" "exit"
+fn exit_with(code : Int32) -> Unit = "__moonbit_sys_unstable" "exit"
 
 ///|
 #cfg(any(target="native", target="llvm"))
-extern "c" fn exit_with(code : Int) = "exit"
+extern "c" fn exit_with(code : Int32) = "exit"
 
 ///|
 #cfg(target="js")
-extern "js" fn exit_with(code : Int) =
+extern "js" fn exit_with(code : Int32) =
   #| function(code) {
   #|   if (typeof process !== "undefined") process.exit(code);
   #| }
@@ -26,6 +26,7 @@ fn usage() -> String {
   "  moon run cmd/main inspect [--json] <module.wasm>\n" +
   "  moon run cmd/main validate [--json] <module.wasm>\n" +
   "  moon run cmd/main features [--json] <module.wasm>\n" +
+  "  moon run cmd/main analyze <module.wasm>\n" +
   "  moon run cmd/main diff [--json] <left.wasm> <right.wasm>"
 }
 
@@ -34,7 +35,7 @@ fn read_module(path : String) -> Result[@inspect.Module, String] {
   let raw = @fs.read_file_to_bytes(path) catch {
     _ => return Err("cannot read '" + path + "'")
   }
-  let bytes : Array[Int] = []
+  let bytes : Array[Int32] = []
   for byte in raw {
     bytes.push(byte.to_int())
   }
@@ -83,7 +84,7 @@ fn render_features_json(features : Array[@inspect.WasmFeature]) -> String {
 }
 
 ///|
-fn size_json(value : Int?) -> String {
+fn size_json(value : Int32?) -> String {
   match value {
     Some(size) => size.to_string()
     None => "null"
@@ -113,7 +114,7 @@ fn render_diff_json(left : @inspect.Module, right : @inspect.Module) -> String {
 }
 
 ///|
-fn inspect_command(json : Bool, path : String) -> Int {
+fn inspect_command(json : Bool, path : String) -> Int32 {
   let binary = match read_module(path) {
     Ok(value) => value
     Err(message) => {
@@ -138,7 +139,7 @@ fn inspect_command(json : Bool, path : String) -> Int {
 }
 
 ///|
-fn validate_command(json : Bool, path : String) -> Int {
+fn validate_command(json : Bool, path : String) -> Int32 {
   let binary = match read_module(path) {
     Ok(value) => value
     Err(message) => {
@@ -167,7 +168,7 @@ fn validate_command(json : Bool, path : String) -> Int {
 }
 
 ///|
-fn features_command(json : Bool, path : String) -> Int {
+fn features_command(json : Bool, path : String) -> Int32 {
   let binary = match read_module(path) {
     Ok(value) => value
     Err(message) => {
@@ -192,7 +193,35 @@ fn features_command(json : Bool, path : String) -> Int {
 }
 
 ///|
-fn diff_command(json : Bool, left_path : String, right_path : String) -> Int {
+fn analyze_command(path : String) -> Int32 {
+  let binary = match read_module(path) {
+    Ok(value) => value
+    Err(message) => {
+      println(message)
+      return 2
+    }
+  }
+  let decoded = match @inspect.decode_module(binary) {
+    Ok(value) => value
+    Err(error) => {
+      println(error.message())
+      return 2
+    }
+  }
+  match @inspect.analyze_call_graph(decoded) {
+    Ok(report) => {
+      println(report.render())
+      0
+    }
+    Err(error) => {
+      println(error.message())
+      2
+    }
+  }
+}
+
+///|
+fn diff_command(json : Bool, left_path : String, right_path : String) -> Int32 {
   let left = match read_module(left_path) {
     Ok(value) => value
     Err(message) => {
@@ -211,6 +240,8 @@ fn diff_command(json : Bool, left_path : String, right_path : String) -> Int {
     println(render_diff_json(left, right))
   } else {
     println(@inspect.render_structure_diff(left, right))
+    let byte_changes = @inspect.diff_binary_sections(left, right)
+    println(@inspect.render_binary_diff(byte_changes))
   }
   0
 }
@@ -247,6 +278,13 @@ fn main {
           println(message + "\n" + usage())
           2
         }
+      }
+    "analyze" =>
+      if argv.length() == 3 {
+        analyze_command(argv[2])
+      } else {
+        println("expected one module path\n" + usage())
+        2
       }
     "diff" =>
       match two_inputs(argv[2:]) {

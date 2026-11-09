@@ -179,7 +179,7 @@ fn skip_const_expr(cursor : Cursor) -> Result[Span, DecodeError] {
         )
     }
   }
-  Ok({ start, end: cursor.position })
+  Ok({ start, end: cursor.position, })
 }
 
 ///|
@@ -213,7 +213,7 @@ fn decode_type_section(
       Ok(value) => value
       Err(error) => return Err(error)
     }
-    types.push({ params, results })
+    types.push({ params, results, })
   }
   match expect_finished(cursor, Type) {
     Ok(_) => Ok(types)
@@ -288,7 +288,7 @@ fn decode_import_section(binary : Module) -> Result[Array[Import], DecodeError] 
         None
       }
     }
-    imports.push({ module_name, name, kind, type_index })
+    imports.push({ module_name, name, kind, type_index, })
   }
   match expect_finished(cursor, Import) {
     Ok(_) => Ok(imports)
@@ -297,7 +297,9 @@ fn decode_import_section(binary : Module) -> Result[Array[Import], DecodeError] 
 }
 
 ///|
-fn decode_function_section(binary : Module) -> Result[Array[Int], DecodeError] {
+fn decode_function_section(
+  binary : Module,
+) -> Result[Array[Int32], DecodeError] {
   let cursor = match section_cursor(binary, Function) {
     Some(value) => value
     None => return Ok([])
@@ -306,7 +308,7 @@ fn decode_function_section(binary : Module) -> Result[Array[Int], DecodeError] {
     Ok(value) => value
     Err(error) => return Err(error)
   }
-  let types : Array[Int] = []
+  let types : Array[Int32] = []
   for _ in 0..<count {
     match cursor.read_var_u32() {
       Ok(value) => types.push(value)
@@ -351,7 +353,7 @@ fn decode_table_section(
       Ok(value) => value
       Err(error) => return Err(error)
     }
-    tables.push({ element_type, limits })
+    tables.push({ element_type, limits, })
   }
   match expect_finished(cursor, Table) {
     Ok(_) => Ok(tables)
@@ -424,7 +426,7 @@ fn decode_global_section(
       Ok(value) => value
       Err(error) => return Err(error)
     }
-    globals.push({ value_type, mutable, init_span })
+    globals.push({ value_type, mutable, init_span, })
   }
   match expect_finished(cursor, Global) {
     Ok(_) => Ok(globals)
@@ -456,7 +458,7 @@ fn decode_export_section(binary : Module) -> Result[Array[Export], DecodeError] 
       Ok(value) => value
       Err(error) => return Err(error)
     }
-    exports.push({ name, kind, index })
+    exports.push({ name, kind, index, })
   }
   match expect_finished(cursor, Export) {
     Ok(_) => Ok(exports)
@@ -465,7 +467,7 @@ fn decode_export_section(binary : Module) -> Result[Array[Export], DecodeError] 
 }
 
 ///|
-fn decode_start_section(binary : Module) -> Result[Int?, DecodeError] {
+fn decode_start_section(binary : Module) -> Result[Int32?, DecodeError] {
   let cursor = match section_cursor(binary, Start) {
     Some(value) => value
     None => return Ok(None)
@@ -532,7 +534,7 @@ fn decode_code_section(binary : Module) -> Result[Array[CodeBody], DecodeError] 
     }
     bodies.push({
       locals,
-      instruction_span: { start: instruction_start, end: body.position },
+      instruction_span: { start: instruction_start, end: body.position, },
       byte_length: body_size,
     })
   }
@@ -543,7 +545,7 @@ fn decode_code_section(binary : Module) -> Result[Array[CodeBody], DecodeError] 
 }
 
 ///|
-fn decode_data_count_section(binary : Module) -> Result[Int?, DecodeError] {
+fn decode_data_count_section(binary : Module) -> Result[Int32?, DecodeError] {
   let cursor = match section_cursor(binary, DataCount) {
     Some(value) => value
     None => return Ok(None)

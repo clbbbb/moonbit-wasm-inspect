@@ -1,13 +1,13 @@
 ///|
 /// Core public data types used by the binary reader and module inspector.
 pub enum DecodeError {
-  UnexpectedEof(Int)
-  InvalidLeb128(Int, String)
+  UnexpectedEof(Int32)
+  InvalidLeb128(Int32, String)
   InvalidHeader(String)
-  InvalidSection(Int, Int, String)
-  UnsupportedFeature(String, Int)
-  InvalidUtf8(Int)
-  ValidationError(Int, String)
+  InvalidSection(Int32, Int32, String)
+  UnsupportedFeature(String, Int32)
+  InvalidUtf8(Int32)
+  ValidationError(Int32, String)
 }
 
 ///|
@@ -36,43 +36,43 @@ pub fn DecodeError::message(self : DecodeError) -> String {
 
 ///|
 pub struct Span {
-  start : Int
-  end : Int
+  start : Int32
+  end : Int32
 }
 
 ///|
-pub fn Span::size(self : Span) -> Int {
+pub fn Span::size(self : Span) -> Int32 {
   self.end - self.start
 }
 
 ///|
-pub fn Span::contains(self : Span, position : Int) -> Bool {
+pub fn Span::contains(self : Span, position : Int32) -> Bool {
   position >= self.start && position < self.end
 }
 
 ///|
 pub struct Cursor {
-  bytes : Array[Int]
-  mut position : Int
-  limit : Int
+  bytes : Array[Int32]
+  mut position : Int32
+  limit : Int32
 }
 
 ///|
-pub fn Cursor::new(bytes : Array[Int]) -> Cursor {
-  { bytes, position: 0, limit: bytes.length() }
+pub fn Cursor::new(bytes : Array[Int32]) -> Cursor {
+  { bytes, position: 0, limit: bytes.length(), }
 }
 
 ///|
 fn Cursor::with_bounds(
-  bytes : Array[Int],
-  position : Int,
-  limit : Int,
+  bytes : Array[Int32],
+  position : Int32,
+  limit : Int32,
 ) -> Cursor {
-  { bytes, position, limit }
+  { bytes, position, limit, }
 }
 
 ///|
-pub fn Cursor::remaining(self : Cursor) -> Int {
+pub fn Cursor::remaining(self : Cursor) -> Int32 {
   self.limit - self.position
 }
 
@@ -83,5 +83,5 @@ pub fn Cursor::is_finished(self : Cursor) -> Bool {
 
 ///|
 pub fn Cursor::span(self : Cursor) -> Span {
-  { start: self.position, end: self.limit }
+  { start: self.position, end: self.limit, }
 }

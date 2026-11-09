@@ -1,6 +1,6 @@
 ///|
 /// Minimal in-memory inspection example. Run with `moon run examples/basic`.
-fn sample_module() -> Array[Int] {
+fn sample_module() -> Array[Int32] {
   [
     0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
     // type: one () -> () function

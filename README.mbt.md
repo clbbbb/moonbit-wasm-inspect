@@ -45,10 +45,11 @@ moon run cmd/main inspect --json path/to/module.wasm
 moon run cmd/main validate path/to/module.wasm
 moon run cmd/main validate --json path/to/module.wasm
 moon run cmd/main features path/to/module.wasm
+moon run cmd/main analyze path/to/module.wasm
 moon run cmd/main diff left.wasm right.wasm
 ```
 
-`inspect` 输出结构或已解码元数据；`validate` 发现语义问题时返回退出码 `1`；路径、格式或参数错误返回 `2`。四个命令均可加 `--json` 获取机器可读输出。
+`inspect` 输出结构或已解码元数据；`validate` 发现语义问题时返回退出码 `1`；`analyze` 汇总函数调用图、递归、可达性和函数体指标；`diff` 在文本模式下同时显示结构变化与 section 字节差异。路径、格式或参数错误返回 `2`。`inspect`、`validate`、`features` 和 `diff` 可加 `--json` 获取机器可读输出。
 
 ## 可运行示例
 
@@ -78,6 +79,8 @@ match @inspect.parse_module(bytes) {
 - 数据/元素段、函数/标签类型、导出、start、memory/table/function 索引空间的交叉校验；
 - 指令流摘要：控制块、分支、直接调用边、局部变量、常量、内存访问，以及常见 bulk-memory/SIMD immediate；
 - 调用图摘要、文本/JSON 结构报告、校验报告、结构 diff 与保守特性识别。
+- 函数级静态分析：导出根可达性、不可达定义函数、递归函数、直接/间接调用数、函数体大小及圈复杂度估计；
+- 按 section 身份与重复序号匹配的字节级差异，报告新增、删除、变更 section、共同前缀及不同字节数。
 
 ## 功能边界
 

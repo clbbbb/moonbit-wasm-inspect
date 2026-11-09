@@ -5,7 +5,7 @@
 ///|
 /// preserves unknown subsections so new producers do not break inspection.
 pub struct FunctionName {
-  index : Int
+  index : Int32
   name : String
 }
 
@@ -13,11 +13,11 @@ pub struct FunctionName {
 pub struct NameSection {
   module_name : String?
   function_names : Array[FunctionName]
-  unknown_subsection_ids : Array[Int]
+  unknown_subsection_ids : Array[Int32]
 }
 
 ///|
-pub fn NameSection::function_name(self : NameSection, index : Int) -> String? {
+pub fn NameSection::function_name(self : NameSection, index : Int32) -> String? {
   for item in self.function_names {
     if item.index == index {
       return Some(item.name)
@@ -76,7 +76,7 @@ fn decode_function_names(
         )
       }
     }
-    names.push({ index, name })
+    names.push({ index, name, })
   }
   Ok(names)
 }
@@ -109,7 +109,7 @@ pub fn decode_name_section(
   }
   let mut module_name : String? = None
   let function_names : Array[FunctionName] = []
-  let unknown : Array[Int] = []
+  let unknown : Array[Int32] = []
   while !outer.is_finished() {
     let id = match outer.read_u8() {
       Ok(value) => value
@@ -172,5 +172,5 @@ pub fn decode_name_section(
       _ => unknown.push(id)
     }
   }
-  Ok(Some({ module_name, function_names, unknown_subsection_ids: unknown }))
+  Ok(Some({ module_name, function_names, unknown_subsection_ids: unknown, }))
 }

@@ -6,7 +6,7 @@
 /// before any section-specific decoder is invoked.
 fn read_header_byte(
   cursor : Cursor,
-  expected : Int,
+  expected : Int32,
   label : String,
 ) -> Result[Unit, DecodeError] {
   match cursor.read_u8() {
@@ -29,7 +29,7 @@ fn read_header_byte(
 }
 
 ///|
-fn parse_header(cursor : Cursor) -> Result[Int, DecodeError] {
+fn parse_header(cursor : Cursor) -> Result[Int32, DecodeError] {
   match read_header_byte(cursor, 0x00, "magic[0]") {
     Err(error) => return Err(error)
     Ok(_) => ()
@@ -70,9 +70,9 @@ fn parse_header(cursor : Cursor) -> Result[Int, DecodeError] {
 ///|
 fn check_section_order(
   kind : SectionKind,
-  previous : Int,
-  position : Int,
-) -> Result[Int, DecodeError] {
+  previous : Int32,
+  position : Int32,
+) -> Result[Int32, DecodeError] {
   if kind == Custom {
     Ok(previous)
   } else if kind.id() <= previous {
@@ -103,7 +103,7 @@ fn custom_section_name(payload : Cursor) -> Result[String?, DecodeError] {
 }
 
 ///|
-pub fn parse_module(bytes : Array[Int]) -> Result[Module, DecodeError] {
+pub fn parse_module(bytes : Array[Int32]) -> Result[Module, DecodeError] {
   let cursor = Cursor::new(bytes)
   let version = match parse_header(cursor) {
     Ok(value) => value
@@ -151,20 +151,20 @@ pub fn parse_module(bytes : Array[Int]) -> Result[Module, DecodeError] {
     sections.push({
       id,
       kind,
-      payload: { start: payload_start, end: payload_start + declared_size },
-      full: { start: full_start, end: cursor.position },
+      payload: { start: payload_start, end: payload_start + declared_size, },
+      full: { start: full_start, end: cursor.position, },
       custom_name,
     })
   }
-  Ok({ bytes, sections, version })
+  Ok({ bytes, sections, version, })
 }
 
 ///|
 pub struct ModuleStats {
-  byte_length : Int
-  section_count : Int
-  custom_section_count : Int
-  payload_bytes : Int
+  byte_length : Int32
+  section_count : Int32
+  custom_section_count : Int32
+  payload_bytes : Int32
 }
 
 ///|

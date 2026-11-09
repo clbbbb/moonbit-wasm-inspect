@@ -4,10 +4,14 @@
 
 ///|
 /// index spaces and returns all findings instead of stopping at the first one.
+#derive(Eq)
 pub enum IssueLevel {
   ErrorIssue
   WarningIssue
-} derive(Eq)
+}
+
+///|
+pub extend IssueLevel with Eq::{not_equal, equal}
 
 ///|
 pub fn IssueLevel::label(self : IssueLevel) -> String {
@@ -64,7 +68,7 @@ pub fn ValidationReport::render(self : ValidationReport) -> String {
 }
 
 ///|
-fn imported_count(decoded : DecodedModule, kind : ExternalKind) -> Int {
+fn imported_count(decoded : DecodedModule, kind : ExternalKind) -> Int32 {
   let mut count = 0
   for item in decoded.imports() {
     if item.kind == kind {
@@ -79,8 +83,8 @@ fn push_index_issue(
   issues : Array[ValidationIssue],
   rule : String,
   kind : String,
-  index : Int,
-  limit : Int,
+  index : Int32,
+  limit : Int32,
 ) -> Unit {
   if index < 0 || index >= limit {
     issues.push({

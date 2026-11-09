@@ -4,7 +4,7 @@
 
 ///|
 /// relying on a filesystem or a host-specific byte type.
-pub fn Cursor::read_u8(self : Cursor) -> Result[Int, DecodeError] {
+pub fn Cursor::read_u8(self : Cursor) -> Result[Int32, DecodeError] {
   if self.position >= self.limit {
     Err(UnexpectedEof(self.position))
   } else {
@@ -15,7 +15,7 @@ pub fn Cursor::read_u8(self : Cursor) -> Result[Int, DecodeError] {
 }
 
 ///|
-pub fn Cursor::peek_u8(self : Cursor) -> Result[Int, DecodeError] {
+pub fn Cursor::peek_u8(self : Cursor) -> Result[Int32, DecodeError] {
   if self.position >= self.limit {
     Err(UnexpectedEof(self.position))
   } else {
@@ -24,7 +24,7 @@ pub fn Cursor::peek_u8(self : Cursor) -> Result[Int, DecodeError] {
 }
 
 ///|
-pub fn Cursor::skip(self : Cursor, count : Int) -> Result[Unit, DecodeError] {
+pub fn Cursor::skip(self : Cursor, count : Int32) -> Result[Unit, DecodeError] {
   if count < 0 || count > self.remaining() {
     Err(UnexpectedEof(self.position))
   } else {
@@ -36,12 +36,12 @@ pub fn Cursor::skip(self : Cursor, count : Int) -> Result[Unit, DecodeError] {
 ///|
 pub fn Cursor::read_slice(
   self : Cursor,
-  count : Int,
-) -> Result[Array[Int], DecodeError] {
+  count : Int32,
+) -> Result[Array[Int32], DecodeError] {
   if count < 0 || count > self.remaining() {
     Err(UnexpectedEof(self.position))
   } else {
-    let output : Array[Int] = []
+    let output : Array[Int32] = []
     let stop = self.position + count
     while self.position < stop {
       output.push(self.bytes[self.position])
@@ -54,7 +54,7 @@ pub fn Cursor::read_slice(
 ///|
 pub fn Cursor::subcursor(
   self : Cursor,
-  count : Int,
+  count : Int32,
 ) -> Result[Cursor, DecodeError] {
   if count < 0 || count > self.remaining() {
     Err(UnexpectedEof(self.position))
@@ -66,7 +66,7 @@ pub fn Cursor::subcursor(
 }
 
 ///|
-pub fn Cursor::read_var_u32(self : Cursor) -> Result[Int, DecodeError] {
+pub fn Cursor::read_var_u32(self : Cursor) -> Result[Int32, DecodeError] {
   let start = self.position
   let mut result = 0
   let mut shift = 0
@@ -95,7 +95,7 @@ pub fn Cursor::read_var_u32(self : Cursor) -> Result[Int, DecodeError] {
 }
 
 ///|
-pub fn Cursor::read_var_i32(self : Cursor) -> Result[Int, DecodeError] {
+pub fn Cursor::read_var_i32(self : Cursor) -> Result[Int32, DecodeError] {
   let start = self.position
   let mut result = 0
   let mut shift = 0

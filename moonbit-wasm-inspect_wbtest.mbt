@@ -2,8 +2,16 @@
 
 ///|
 /// parser state. Each one targets an observable boundary of the reader.
-fn empty_module() -> Array[Int] {
+fn empty_module() -> Array[Int32] {
   [0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]
+}
+
+///|
+fn self_recursive_export_module() -> Array[Int32] {
+  [
+    0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, 1, 4, 1, 0x60, 0, 0, 3, 2, 1,
+    0, 7, 7, 1, 3, 0x72, 0x75, 0x6e, 0, 0, 10, 6, 1, 4, 0, 0x10, 0, 0x0b,
+  ]
 }
 
 ///|
@@ -16,6 +24,63 @@ test "parses the version-one empty module" {
       assert_eq(binary.stats().byte_length, 8)
     }
   }
+}
+
+///|
+test "analyzes function reachability and direct recursion" {
+  let binary = match parse_module(self_recursive_export_module()) {
+    Err(error) => fail(error.message())
+    Ok(value) => value
+  }
+  let decoded = match decode_module(binary) {
+    Err(error) => fail(error.message())
+    Ok(value) => value
+  }
+  let analysis = match analyze_call_graph(decoded) {
+    Err(error) => fail(error.message())
+    Ok(value) => value
+  }
+  assert_eq(analysis.functions.length(), 1)
+  assert_eq(analysis.direct_call_edges, 1)
+  assert_eq(analysis.reachable_function_count, 1)
+  assert_eq(analysis.recursive_function_count, 1)
+  assert_true(analysis.functions[0].directly_reachable_from_roots)
+  assert_true(analysis.functions[0].recursive)
+  assert_eq(analysis.functions[0].export_names, ["run"])
+}
+
+///|
+test "diffs section payload bytes while preserving common prefix length" {
+  let left_bytes = empty_module()
+  left_bytes.push(0)
+  left_bytes.push(5)
+  left_bytes.push(3)
+  left_bytes.push(0x66)
+  left_bytes.push(0x6f)
+  left_bytes.push(0x6f)
+  left_bytes.push(0x41)
+  let right_bytes = empty_module()
+  right_bytes.push(0)
+  right_bytes.push(5)
+  right_bytes.push(3)
+  right_bytes.push(0x66)
+  right_bytes.push(0x6f)
+  right_bytes.push(0x6f)
+  right_bytes.push(0x42)
+  let left = match parse_module(left_bytes) {
+    Err(error) => fail(error.message())
+    Ok(value) => value
+  }
+  let right = match parse_module(right_bytes) {
+    Err(error) => fail(error.message())
+    Ok(value) => value
+  }
+  let changes = diff_binary_sections(left, right)
+  assert_eq(changes.length(), 1)
+  assert_true(changes[0].kind is SectionChanged)
+  assert_eq(changes[0].common_prefix_bytes, 4)
+  assert_eq(changes[0].differing_bytes, 1)
+  assert_true(render_binary_diff(changes).contains("differing-bytes=1"))
 }
 
 ///|
@@ -202,7 +267,7 @@ test "semantic validator identifies an out-of-range export" {
 ///|
 test "instruction scanner counts constants locals and calls" {
   let bytes = [0x41, 0x2a, 0x21, 0x00, 0x10, 0x01, 0x0b]
-  match scan_instructions(bytes, { start: 0, end: bytes.length() }) {
+  match scan_instructions(bytes, { start: 0, end: bytes.length(), }) {
     Err(error) => fail(error.message())
     Ok(stats) => {
       assert_eq(stats.instruction_count, 4)
@@ -216,7 +281,7 @@ test "instruction scanner counts constants locals and calls" {
 ///|
 test "instruction scanner rejects unterminated control flow" {
   let bytes = [0x02, 0x40, 0x01]
-  match scan_instructions(bytes, { start: 0, end: bytes.length() }) {
+  match scan_instructions(bytes, { start: 0, end: bytes.length(), }) {
     Ok(_) => fail("expected missing end")
     Err(error) => assert_true(error.message().contains("final end"))
   }
@@ -624,7 +689,7 @@ test "validates data element and tag indices across their index spaces" {
 ///|
 test "instruction summaries retain direct calls branches and proposal immediates" {
   let control = [0x02, 0x40, 0x0d, 0, 0x10, 1, 0x0c, 0, 0x0b, 0x0b]
-  match scan_instructions(control, { start: 0, end: control.length() }) {
+  match scan_instructions(control, { start: 0, end: control.length(), }) {
     Err(error) => fail(error.message())
     Ok(stats) => {
       assert_eq(stats.control_block_count, 1)
@@ -633,7 +698,7 @@ test "instruction summaries retain direct calls branches and proposal immediates
     }
   }
   let prefixed = [0xfc, 9, 0, 0xfd, 14, 0x0b]
-  match scan_instructions(prefixed, { start: 0, end: prefixed.length() }) {
+  match scan_instructions(prefixed, { start: 0, end: prefixed.length(), }) {
     Err(error) => fail(error.message())
     Ok(stats) => {
       assert_eq(stats.bulk_memory_instruction_count, 1)

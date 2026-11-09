@@ -5,7 +5,7 @@
 ///|
 /// core binary format and reports expression-based reference forms explicitly.
 pub enum ElementMode {
-  ActiveElement(Int, Span)
+  ActiveElement(Int32, Span)
   PassiveElement
   DeclarativeElement
 }
@@ -13,7 +13,7 @@ pub enum ElementMode {
 ///|
 pub struct ElementSegment {
   mode : ElementMode
-  functions : Array[Int]
+  functions : Array[Int32]
 }
 
 ///|
@@ -27,12 +27,12 @@ pub fn ElementSegment::description(self : ElementSegment) -> String {
 }
 
 ///|
-fn read_function_indices(cursor : Cursor) -> Result[Array[Int], DecodeError] {
+fn read_function_indices(cursor : Cursor) -> Result[Array[Int32], DecodeError] {
   let count = match cursor.read_var_u32() {
     Ok(value) => value
     Err(error) => return Err(error)
   }
-  let indices : Array[Int] = []
+  let indices : Array[Int32] = []
   for _ in 0..<count {
     match cursor.read_var_u32() {
       Ok(value) => indices.push(value)
@@ -104,7 +104,7 @@ pub fn decode_element_segments(
         }
         DeclarativeElement
       }
-      4..=7 =>
+      4..<=7 =>
         return Err(
           UnsupportedFeature("expression-based element segment", position),
         )
@@ -120,7 +120,7 @@ pub fn decode_element_segments(
       Ok(value) => value
       Err(error) => return Err(error)
     }
-    segments.push({ mode, functions })
+    segments.push({ mode, functions, })
   }
   match expect_finished(cursor, Element) {
     Ok(_) => Ok(segments)
