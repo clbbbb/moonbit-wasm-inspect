@@ -22,9 +22,15 @@ pub fn diff_binary_sections(Module, Module) -> Array[BinarySectionChange]
 
 pub fn diff_structure(Module, Module) -> Array[SectionDifference]
 
+pub fn json_quote(String) -> String
+
 pub fn parse_module(Array[Int32]) -> Result[Module, DecodeError]
 
 pub fn render_binary_diff(Array[BinarySectionChange]) -> String
+
+pub fn render_binary_diff_json(Array[BinarySectionChange]) -> String
+
+pub fn render_call_graph_analysis_json(CallGraphAnalysis) -> String
 
 pub fn render_data_segments(Array[DataSegment]) -> String
 

@@ -27,6 +27,14 @@ test "parses the version-one empty module" {
 }
 
 ///|
+test "JSON quoting escapes string delimiters and control bytes" {
+  assert_eq(
+    json_quote("quote: \" slash: \\ line:\n control:\u{01}"),
+    "\"quote: \\\" slash: \\\\ line:\\n control:\\u0001\"",
+  )
+}
+
+///|
 test "analyzes function reachability and direct recursion" {
   let binary = match parse_module(self_recursive_export_module()) {
     Err(error) => fail(error.message())
@@ -47,6 +55,9 @@ test "analyzes function reachability and direct recursion" {
   assert_true(analysis.functions[0].directly_reachable_from_roots)
   assert_true(analysis.functions[0].recursive)
   assert_eq(analysis.functions[0].export_names, ["run"])
+  let json = render_call_graph_analysis_json(analysis)
+  assert_true(json.contains("\"recursiveFunctionCount\":1"))
+  assert_true(json.contains("\"exportNames\":[\"run\"]"))
 }
 
 ///|
@@ -81,6 +92,7 @@ test "diffs section payload bytes while preserving common prefix length" {
   assert_eq(changes[0].common_prefix_bytes, 4)
   assert_eq(changes[0].differing_bytes, 1)
   assert_true(render_binary_diff(changes).contains("differing-bytes=1"))
+  assert_true(render_binary_diff_json(changes).contains("\"differingBytes\":1"))
 }
 
 ///|

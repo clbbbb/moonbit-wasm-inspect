@@ -26,7 +26,7 @@ fn usage() -> String {
   "  moon run cmd/main inspect [--json] <module.wasm>\n" +
   "  moon run cmd/main validate [--json] <module.wasm>\n" +
   "  moon run cmd/main features [--json] <module.wasm>\n" +
-  "  moon run cmd/main analyze <module.wasm>\n" +
+  "  moon run cmd/main analyze [--json] <module.wasm>\n" +
   "  moon run cmd/main diff [--json] <left.wasm> <right.wasm>"
 }
 
@@ -94,6 +94,7 @@ fn size_json(value : Int32?) -> String {
 ///|
 fn render_diff_json(left : @inspect.Module, right : @inspect.Module) -> String {
   let differences = @inspect.diff_structure(left, right)
+  let byte_changes = @inspect.diff_binary_sections(left, right)
   let mut text = "{\"differences\":["
   let mut first = true
   for difference in differences {
@@ -101,16 +102,19 @@ fn render_diff_json(left : @inspect.Module, right : @inspect.Module) -> String {
       text = text + ","
     }
     text = text +
-      "{\"section\":\"" +
-      difference.label +
-      "\",\"left\":" +
+      "{\"section\":" +
+      @inspect.json_quote(difference.label) +
+      ",\"left\":" +
       size_json(difference.left_size) +
       ",\"right\":" +
       size_json(difference.right_size) +
       "}"
     first = false
   }
-  text + "]}"
+  text +
+  "],\"byteChanges\":" +
+  @inspect.render_binary_diff_json(byte_changes) +
+  "}"
 }
 
 ///|
@@ -193,7 +197,7 @@ fn features_command(json : Bool, path : String) -> Int32 {
 }
 
 ///|
-fn analyze_command(path : String) -> Int32 {
+fn analyze_command(json : Bool, path : String) -> Int32 {
   let binary = match read_module(path) {
     Ok(value) => value
     Err(message) => {
@@ -210,7 +214,11 @@ fn analyze_command(path : String) -> Int32 {
   }
   match @inspect.analyze_call_graph(decoded) {
     Ok(report) => {
-      println(report.render())
+      if json {
+        println(@inspect.render_call_graph_analysis_json(report))
+      } else {
+        println(report.render())
+      }
       0
     }
     Err(error) => {
@@ -280,11 +288,12 @@ fn main {
         }
       }
     "analyze" =>
-      if argv.length() == 3 {
-        analyze_command(argv[2])
-      } else {
-        println("expected one module path\n" + usage())
-        2
+      match single_input(argv[2:]) {
+        Ok((json, path)) => analyze_command(json, path)
+        Err(message) => {
+          println(message + "\n" + usage())
+          2
+        }
       }
     "diff" =>
       match two_inputs(argv[2:]) {

@@ -189,9 +189,9 @@ fn function_import_names(decoded : DecodedModule) -> Array[String?] {
 ///|
 fn mark_reachable_functions(
   decoded : DecodedModule,
-  summaries : Array[FunctionCallSummary],
-  function_count : Int32,
+  adjacency : Array[Array[Int32]],
 ) -> Array[Bool] {
+  let function_count = adjacency.length()
   let reachable : Array[Bool] = []
   for _ in 0..<function_count {
     reachable.push(false)
@@ -217,14 +217,10 @@ fn mark_reachable_functions(
   while queue_position < queue.length() {
     let caller = queue[queue_position]
     queue_position = queue_position + 1
-    for summary in summaries {
-      if summary.function_index == caller {
-        for callee in summary.callees {
-          if callee >= 0 && callee < function_count && !reachable[callee] {
-            reachable[callee] = true
-            queue.push(callee)
-          }
-        }
+    for callee in adjacency[caller] {
+      if callee >= 0 && callee < function_count && !reachable[callee] {
+        reachable[callee] = true
+        queue.push(callee)
       }
     }
   }
@@ -232,48 +228,72 @@ fn mark_reachable_functions(
 }
 
 ///|
-fn function_reaches_itself(
-  function_index : Int32,
+fn call_graph_adjacency(
   summaries : Array[FunctionCallSummary],
   function_count : Int32,
-) -> Bool {
-  let visited : Array[Bool] = []
+) -> Array[Array[Int32]] {
+  let adjacency : Array[Array[Int32]] = []
   for _ in 0..<function_count {
-    visited.push(false)
+    adjacency.push([])
   }
-  let pending : Array[Int32] = []
   for summary in summaries {
-    if summary.function_index == function_index {
+    if summary.function_index >= 0 && summary.function_index < function_count {
       for callee in summary.callees {
-        if callee == function_index {
-          return true
-        }
-        if callee >= 0 && callee < function_count && !visited[callee] {
-          visited[callee] = true
-          pending.push(callee)
+        adjacency[summary.function_index].push(callee)
+      }
+    }
+  }
+  adjacency
+}
+
+///|
+fn recursive_function_flags(adjacency : Array[Array[Int32]]) -> Array[Bool] {
+  let count = adjacency.length()
+  let recursive : Array[Bool] = []
+  let colors : Array[Int32] = []
+  for _ in 0..<count {
+    recursive.push(false)
+    colors.push(0)
+  }
+  let nodes : Array[Int32] = []
+  let next_edges : Array[Int32] = []
+  for root in 0..<count {
+    if colors[root] == 0 {
+      colors[root] = 1
+      nodes.push(root)
+      next_edges.push(0)
+      while nodes.length() > 0 {
+        let frame = nodes.length() - 1
+        let current = nodes[frame]
+        if next_edges[frame] < adjacency[current].length() {
+          let callee = adjacency[current][next_edges[frame]]
+          next_edges[frame] = next_edges[frame] + 1
+          if callee >= 0 && callee < count {
+            if colors[callee] == 0 {
+              colors[callee] = 1
+              nodes.push(callee)
+              next_edges.push(0)
+            } else if colors[callee] == 1 {
+              let mut cycle_start = nodes.length() - 1
+              while cycle_start >= 0 && nodes[cycle_start] != callee {
+                cycle_start = cycle_start - 1
+              }
+              let mut cycle_member = cycle_start
+              while cycle_member < nodes.length() {
+                recursive[nodes[cycle_member]] = true
+                cycle_member = cycle_member + 1
+              }
+            }
+          }
+        } else {
+          colors[current] = 2
+          ignore(nodes.pop())
+          ignore(next_edges.pop())
         }
       }
     }
   }
-  let mut cursor = 0
-  while cursor < pending.length() {
-    let current = pending[cursor]
-    cursor = cursor + 1
-    for summary in summaries {
-      if summary.function_index == current {
-        for callee in summary.callees {
-          if callee == function_index {
-            return true
-          }
-          if callee >= 0 && callee < function_count && !visited[callee] {
-            visited[callee] = true
-            pending.push(callee)
-          }
-        }
-      }
-    }
-  }
-  false
+  recursive
 }
 
 ///|
@@ -289,7 +309,9 @@ pub fn analyze_call_graph(
   let export_names = function_export_names(decoded)
   let function_count = type_indices.length()
   let imported_count = decoded.imported_function_count()
-  let reachable = mark_reachable_functions(decoded, summaries, function_count)
+  let adjacency = call_graph_adjacency(summaries, function_count)
+  let reachable = mark_reachable_functions(decoded, adjacency)
+  let recursive_flags = recursive_function_flags(adjacency)
   let functions : Array[FunctionAnalysis] = []
   let mut indirect_calls = 0
   let mut edge_count = 0
@@ -307,7 +329,7 @@ pub fn analyze_call_graph(
       unreachable_defined = unreachable_defined + 1
     }
     let is_imported = index < imported_count
-    let callees : Array[Int32] = []
+    let callees = adjacency[index]
     let mut instructions = 0
     let mut body_bytes = 0
     let mut blocks = 0
@@ -316,14 +338,6 @@ pub fn analyze_call_graph(
     let mut memory_accesses = 0
     let mut local_accesses = 0
     if !is_imported {
-      for summary in summaries {
-        if summary.function_index == index {
-          for callee in summary.callees {
-            callees.push(callee)
-          }
-          call_sites = summary.callees.length()
-        }
-      }
       let body_index = index - imported_count
       if body_index >= 0 && body_index < decoded.code_bodies.length() {
         let body = decoded.code_bodies[body_index]
@@ -343,11 +357,7 @@ pub fn analyze_call_graph(
           (stats.call_count - stats.called_functions.length())
       }
     }
-    let recursive = if is_imported {
-      false
-    } else {
-      function_reaches_itself(index, summaries, function_count)
-    }
+    let recursive = recursive_flags[index]
     if recursive {
       recursive_count = recursive_count + 1
     }

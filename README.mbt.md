@@ -46,10 +46,12 @@ moon run cmd/main validate path/to/module.wasm
 moon run cmd/main validate --json path/to/module.wasm
 moon run cmd/main features path/to/module.wasm
 moon run cmd/main analyze path/to/module.wasm
+moon run cmd/main analyze --json path/to/module.wasm
 moon run cmd/main diff left.wasm right.wasm
+moon run cmd/main diff --json left.wasm right.wasm
 ```
 
-`inspect` 输出结构或已解码元数据；`validate` 发现语义问题时返回退出码 `1`；`analyze` 汇总函数调用图、递归、可达性和函数体指标；`diff` 在文本模式下同时显示结构变化与 section 字节差异。路径、格式或参数错误返回 `2`。`inspect`、`validate`、`features` 和 `diff` 可加 `--json` 获取机器可读输出。
+`inspect` 输出结构或已解码元数据；`validate` 发现语义问题时返回退出码 `1`；`analyze` 汇总函数调用图、递归、可达性和函数体指标；`diff` 同时报告结构变化与 section 字节差异。`analyze` 和 `diff` 均可加 `--json` 获取机器可读输出。路径、格式或参数错误返回 `2`。
 
 ## 可运行示例
 
